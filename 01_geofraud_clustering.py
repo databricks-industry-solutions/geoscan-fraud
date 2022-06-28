@@ -19,7 +19,7 @@
 # MAGIC 
 # MAGIC The first step of GEOSCAN is to link each point to all its neighbours within an `epsilon` distance and remove points having less than `minPts` neighbours. Concretely, this means running a cartesian product - `O(n^2)` time complexity - of our dataset to filter out tuples that are more than `epsilon` meters away from one another. In our approach, we leverage H3 hexagons to only group points we know are close enough to be worth comparing. As reported in below picture, we first map a point to an H3 polygon and draw a circle of radius `epsilon` that we tile to at least 1 complete ring. Therefore, 2 points being at a distance of `epsilon` away would be sharing at least 1 polygon in common, so grouping by polygon would group points in close vicinity, ignoring 99.99% of the dataset. These pairs can then be further measured using a [haversine](https://en.wikipedia.org/wiki/Haversine_formula) distance.
 # MAGIC 
-# MAGIC <img src="https://brysmiwasb.blob.core.windows.net/demos/geoscan/geoscan_algorithm.png" width=800>
+# MAGIC <img src="https://github.com/databricks-industry-solutions/geoscan-fraud/raw/main/images/geoscan_algorithm.png" width=800>
 # MAGIC 
 # MAGIC Even though the theoretical time complexity remains the same - `O(n^2)` - we did not have to run an expensive (and non realistic) cartesian product of our entire dataframe. The real time complexity is `O(p.k^2)` where `p` groups are processed in parallel, running cartesian product of `k` points (`k << n`) sharing a same H3 hexagon, hence scaling massively. This isn't magic though, and prone to failure when data is heavily skewed in dense area (we recommend sampling data in specific areas as reported later). 
 # MAGIC  
@@ -53,46 +53,13 @@
 
 # COMMAND ----------
 
-with open(f'/data/transactions.csv', 'r') as file:
-  
-
-# COMMAND ----------
-
+import pandas as pd
 from pyspark.sql import functions as F
-from pyspark.sql.types import * 
-
-schema = StructType([
-    StructField('latitude', DoubleType()),
-    StructField('longitude', DoubleType()),
-    StructField('amount', DoubleType()),
-    StructField('user', StringType())
-  ])
-
-_ = (
-  spark
-    .read
-    .format('csv')
-    .option('header', 'true')
-    .schema(schema)
-    .load(f'{home_directory}/nyc.csv')
-    .write
-    .format('delta')
-    .mode('overwrite')
-    .saveAsTable(config['db_raw_data'])
-)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC Our simplistic dataset only contains a tokenized value for users, a geospatial coordinate (as `latitude` and `longitude`) and a transaction `amount`. In real life, the same should also contains transaction description, timestamp, and often has been enriched with merchant and brand information (will be part of a future solution accelerator). With our data stored on a Delta table, we can optimize read access to specific fields like `user` as well as rebalancing possible small files into well defined partitions
-
-# COMMAND ----------
-
-_ = sql("OPTIMIZE {} ZORDER BY user".format(config['db_raw_data']))
-
-# COMMAND ----------
-
-points_df = spark.read.table(config['db_raw_data'])
+transactions = pd.read_csv('data/transactions.csv')
+transactions['latitude'] = transactions['latitude'].apply(lambda x: float(x))
+transactions['longitude'] = transactions['longitude'].apply(lambda x: float(x))
+transactions['amount'] = transactions['amount'].apply(lambda x: float(x))
+points_df = spark.createDataFrame(transactions)
 display(points_df)
 
 # COMMAND ----------
@@ -181,12 +148,12 @@ with mlflow.start_run(run_name='GEOSCAN') as run:
 # COMMAND ----------
 
 geoJson = model.toGeoJson()
-with open(f'{temp_directory}/geoscan.geojson', 'w') as f:
+with open("/tmp/{}_geoscan.geojson".format(run_id), 'w') as f:
   f.write(geoJson)
 
 import mlflow
 client = mlflow.tracking.MlflowClient()
-client.log_artifact(run_id, f"{temp_directory}/geoscan.geojson")
+client.log_artifact(run_id, "/tmp/{}_geoscan.geojson".format(run_id))
 
 # COMMAND ----------
 
@@ -291,13 +258,13 @@ nyc_anomalies
 
 # COMMAND ----------
 
-dbutils.fs.rm(f'{home_directory}/geoscan', True)
-model.save(f'{home_directory}/geoscan')
+dbutils.fs.rm("/tmp/{}_geoscan".format(run_id), True)
+model.save("/tmp/{}_geoscan".format(run_id))
 
 # COMMAND ----------
 
 from geoscan import GeoscanModel
-model = GeoscanModel.load(f'{home_directory}/geoscan')
+model = GeoscanModel.load("/tmp/{}_geoscan".format(run_id))
 
 # COMMAND ----------
 
@@ -333,13 +300,13 @@ with mlflow.start_run(run_name='GEOSCAN_PERSONALIZED') as run:
 
 # COMMAND ----------
 
-dbutils.fs.rm(f'{home_directory}/geoscan_personalized', True)
-models.save(f'{home_directory}/geoscan_personalized')
+dbutils.fs.rm("/tmp/{}_geoscan_personalized".format(run_id), True)
+models.save("/tmp/{}_geoscan_personalized".format(run_id))
 
 # COMMAND ----------
 
 from geoscan import GeoscanPersonalizedModel
-model_personalized = GeoscanPersonalizedModel.load(f'{home_directory}/geoscan_personalized')
+model_personalized = GeoscanPersonalizedModel.load("/tmp/{}_geoscan_personalized".format(run_id))
 
 # COMMAND ----------
 
@@ -464,7 +431,7 @@ display(personalized_areas)
 
 # COMMAND ----------
 
-personalized_areas.write.format('delta').mode('overwrite').saveAsTable(config['db_personalized_tiles'])
+personalized_areas.write.format('delta').mode('overwrite').saveAsTable(config['database']['tables']['tiles'])
 
 # COMMAND ----------
 
@@ -473,7 +440,7 @@ personalized_areas.write.format('delta').mode('overwrite').saveAsTable(config['d
 
 # COMMAND ----------
 
-sql("OPTIMIZE {} ZORDER BY (user, h3)".format(config['db_personalized_tiles']))
+sql("OPTIMIZE {} ZORDER BY (user, h3)".format(config['database']['tables']['tiles']))
 
 # COMMAND ----------
 
@@ -482,7 +449,7 @@ sql("OPTIMIZE {} ZORDER BY (user, h3)".format(config['db_personalized_tiles']))
 
 # COMMAND ----------
 
-personalized_tiles = spark.read.table(config['db_personalized_tiles']).filter(F.col('user') == user)
+personalized_tiles = spark.read.table(config['database']['tables']['tiles']).filter(F.col('user') == user)
 display(personalized_tiles)
 
 # COMMAND ----------
