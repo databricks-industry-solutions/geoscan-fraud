@@ -11,4 +11,4 @@
 
 ___
 
-<img src=https://brysmiwasb.blob.core.windows.net/demos/geoscan/geoscan_architecture.png alt="logical_flow" width="800">
+<img src=images/geoscan_architecture.png alt="logical_flow" width="800">
