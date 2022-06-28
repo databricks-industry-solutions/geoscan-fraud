@@ -482,7 +482,7 @@ nyc_personalized
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC We suddenly have gained incredible insights about our customer's shopping behaviour. Although the core of their transactions are made in the chelsea and the financial district area, what seems to better define this user are his / her transactions around the Plaza Hotel and Williamsburg. @Junta??
+# MAGIC We suddenly have gained incredible insights about our customer's shopping behaviour. Although the core of their transactions are made in the chelsea and the financial district area, what seems to better define this user are his / her transactions around the Plaza Hotel and Williamsburg. 
 
 # COMMAND ----------
 
