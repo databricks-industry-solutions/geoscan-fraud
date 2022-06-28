@@ -300,13 +300,17 @@ with mlflow.start_run(run_name='GEOSCAN_PERSONALIZED') as run:
 
 # COMMAND ----------
 
-dbutils.fs.rm("/tmp/{}_geoscan_personalized".format(run_id), True)
-models.save("/tmp/{}_geoscan_personalized".format(run_id))
+model_path = config['model']['path']
+
+# COMMAND ----------
+
+dbutils.fs.rm(model_path, True)
+models.save(model_path)
 
 # COMMAND ----------
 
 from geoscan import GeoscanPersonalizedModel
-model_personalized = GeoscanPersonalizedModel.load("/tmp/{}_geoscan_personalized".format(run_id))
+model_personalized = GeoscanPersonalizedModel.load(model_path)
 
 # COMMAND ----------
 
@@ -333,7 +337,7 @@ personalized_data = points_df.filter(F.col('user') == user).toPandas()[['latitud
 
 nyc_personalized = folium.Map([40.75466940037548,-73.98365020751953], zoom_start=12, width='80%', height='100%')
 folium.TileLayer('Stamen Toner').add_to(nyc_personalized)
-nyc_personalized.add_child(plugins.HeatMap(personalized_data.to_numpy(), radius=16))
+nyc_personalized.add_child(plugins.HeatMap(personalized_data.to_numpy(), radius=8))
 folium.GeoJson(personalized_geojson, name="geojson").add_to(nyc_personalized)
 nyc_personalized
 
@@ -478,7 +482,7 @@ nyc_personalized
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC We suddely have gained incredible insights about our customer's shopping behaviour. Although the core of their transactions are made in the chelsea and the financial district area, what seems to better define this user are his / her transactions around the Plaza Hotel and Williamsburg. @Junta??
+# MAGIC We suddenly have gained incredible insights about our customer's shopping behaviour. Although the core of their transactions are made in the chelsea and the financial district area, what seems to better define this user are his / her transactions around the Plaza Hotel and Williamsburg. @Junta??
 
 # COMMAND ----------
 

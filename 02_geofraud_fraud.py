@@ -5,7 +5,7 @@
 
 # COMMAND ----------
 
-# MAGIC %run ./config/geoscan_config
+# MAGIC %run ./config/configure_notebook
 
 # COMMAND ----------
 
@@ -15,7 +15,7 @@
 
 # COMMAND ----------
 
-tiles = spark.read.table(config['db_personalized_tiles'])
+tiles = spark.read.table(config['database']['tables']['tiles'])
 display(tiles)
 
 # COMMAND ----------
@@ -25,7 +25,8 @@ display(tiles)
 
 # COMMAND ----------
 
-model_personalized = spark.read.format('parquet').load(f'{home_directory}/geoscan_personalized/data')
+model_path = config['model']['path']
+model_personalized = spark.read.format('parquet').load('{}/data'.format(model_path))
 display(model_personalized)
 
 # COMMAND ----------
@@ -51,12 +52,21 @@ def to_h3(lat, lng, precision):
 
 # COMMAND ----------
 
+import pandas as pd
+from pyspark.sql import functions as F
+transactions = pd.read_csv('data/transactions.csv')
+transactions['latitude'] = transactions['latitude'].apply(lambda x: float(x))
+transactions['longitude'] = transactions['longitude'].apply(lambda x: float(x))
+transactions['amount'] = transactions['amount'].apply(lambda x: float(x))
+points_df = spark.createDataFrame(transactions)
+display(points_df)
+
+# COMMAND ----------
+
 from pyspark.sql import functions as F
 
 anomalous_transactions = (
-  spark
-    .read
-    .table(config['db_raw_data'])
+  points_df
     .withColumn('h3', to_h3(F.col('latitude'), F.col('longitude'), F.lit(10)))
     .join(tiles, ['user', 'h3'], 'left_outer')
     .filter(F.expr('cluster IS NULL'))
@@ -203,7 +213,7 @@ _ = (
     .groupBy('user')
     .agg(F.collect_list('h3').alias('tiles'))
     .toPandas()
-    .to_csv(f'{temp_directory}/tiles')
+    .to_csv('/tmp/geoscan_tiles')
 )
 
 # COMMAND ----------
@@ -260,7 +270,7 @@ with mlflow.start_run(run_name='h3_lookup'):
   conda_env['dependencies'][2]['pip'] += ['h3=={}'.format(h3.__version__)]
   
   artifacts = {
-    'tiles': f'{temp_directory}/tiles',
+    'tiles': '/tmp/geoscan_tiles',
   }
   
   mlflow.pyfunc.log_model(
@@ -286,7 +296,7 @@ model = mlflow.pyfunc.load_model('runs:/{}/pipeline'.format(api_run_id))
 
 # COMMAND ----------
 
-transactions = spark.read.table(config['db_raw_data']).toPandas()
+transactions = points_df.toPandas()
 
 # COMMAND ----------
 

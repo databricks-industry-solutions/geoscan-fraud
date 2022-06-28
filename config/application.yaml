@@ -6,3 +6,4 @@ database:
 
 model:
   name: solacc_geoscan
+  path: '/FileStore/solution_accelerators/geoscan/model'
