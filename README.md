@@ -21,8 +21,7 @@ ___
 |----------------------------------------|-------------------------|------------|-----------------------------------------------------|
 | com.uber:h3:3.6.3                      | Uber geospatial library | Apache2    | https://github.com/uber/h3                          |
 | h3                                     | Uber geospatial library | Apache2    | https://github.com/uber/h3-py                       |
-| org.scala-graph:graph-core_2.12:1.12.5 | Scala graph             | Apache2    | https://github.com/scala-graph/scala-graph          |
-| com.databricks.labs:geoscan:0.1      | Geoscan algorithm       | Databricks | https://github.com/databrickslabs/geoscan           |
+| com.databricks.labs:geoscan:0.1        | Geoscan algorithm       | Databricks | https://github.com/databrickslabs/geoscan           |
 | folium                                 | Geospatial visualization| MIT        | https://github.com/python-visualization/folium      |
 | pybloomfiltermmap3                     | Bloom filter            | MIT        | https://github.com/prashnts/pybloomfiltermmap3      |
 | PyYAML                                 | Reading Yaml files      | MIT        | https://github.com/yaml/pyyaml                      |
