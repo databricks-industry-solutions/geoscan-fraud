@@ -1,0 +1,7 @@
+database:
+  name: solacc_geoscan
+  tables:
+    tiles: tiles
+
+model:
+  name: solacc_geoscan
