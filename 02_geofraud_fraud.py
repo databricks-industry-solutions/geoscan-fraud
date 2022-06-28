@@ -367,7 +367,7 @@ display(anomalies)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ![window](https://brysmiwasb.blob.core.windows.net/demos/geoscan/geoscan_window.gif)
+# MAGIC ![window](https://github.com/databricks-industry-solutions/geoscan-fraud/raw/main/images/geoscan_window.gif)
 
 # COMMAND ----------
 
