@@ -37,7 +37,6 @@
 # MAGIC |----------------------------------------|-------------------------|------------|-----------------------------------------------------|
 # MAGIC | com.uber:h3:3.6.3                      | Uber geospatial library | Apache2    | https://github.com/uber/h3                          |
 # MAGIC | h3                                     | Uber geospatial library | Apache2    | https://github.com/uber/h3-py                       |
-# MAGIC | org.scala-graph:graph-core_2.12:1.12.5 | Scala graph             | Apache2    | https://github.com/scala-graph/scala-graph          |
 # MAGIC | com.databricks.labs:geoscan:0.1      | Geoscan algorithm       | Databricks | https://github.com/databrickslabs/geoscan           |
 # MAGIC | folium                                 | Geospatial visualization| MIT        | https://github.com/python-visualization/folium      |
 # MAGIC | pybloomfiltermmap3                     | Bloom filter            | MIT        | https://github.com/prashnts/pybloomfiltermmap3      |
