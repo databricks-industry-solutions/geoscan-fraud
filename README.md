@@ -15,13 +15,12 @@ ___
 
 ___
 
-&copy; 2022 Databricks, Inc. All rights reserved. The source in this notebook is provided subject to the Databricks License [https://databricks.com/db-license-source].  All included or referenced third party libraries are subject to the licenses set forth below.
+&copy; 2021 Databricks, Inc. All rights reserved. The source in this notebook is provided subject to the Databricks License [https://databricks.com/db-license-source].  All included or referenced third party libraries are subject to the licenses set forth below.
 
 | library                                | description             | license    | source                                              |
 |----------------------------------------|-------------------------|------------|-----------------------------------------------------|
-| com.uber:h3:3.6.3                      | Uber geospatial library | Apache2    | https://github.com/uber/h3                          |
 | h3                                     | Uber geospatial library | Apache2    | https://github.com/uber/h3-py                       |
-| com.databricks.labs:geoscan:0.1        | Geoscan algorithm       | Databricks | https://github.com/databrickslabs/geoscan           |
+| geoscan                                | Geoscan algorithm       | Databricks | https://github.com/databrickslabs/geoscan           |
 | folium                                 | Geospatial visualization| MIT        | https://github.com/python-visualization/folium      |
 | pybloomfiltermmap3                     | Bloom filter            | MIT        | https://github.com/prashnts/pybloomfiltermmap3      |
 | PyYAML                                 | Reading Yaml files      | MIT        | https://github.com/yaml/pyyaml                      |
