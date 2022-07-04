@@ -36,7 +36,7 @@
 # MAGIC | library                                | description             | license    | source                                              |
 # MAGIC |----------------------------------------|-------------------------|------------|-----------------------------------------------------|
 # MAGIC | h3                                     | Uber geospatial library | Apache2    | https://github.com/uber/h3-py                       |
-# MAGIC | com.databricks.labs:geoscan            | Geoscan algorithm       | Databricks | https://github.com/databrickslabs/geoscan           |
+# MAGIC | geoscan                                | Geoscan algorithm       | Databricks | https://github.com/databrickslabs/geoscan           |
 # MAGIC | folium                                 | Geospatial visualization| MIT        | https://github.com/python-visualization/folium      |
 # MAGIC | pybloomfiltermmap3                     | Bloom filter            | MIT        | https://github.com/prashnts/pybloomfiltermmap3      |
 # MAGIC | PyYAML                                 | Reading Yaml files      | MIT        | https://github.com/yaml/pyyaml                      |
