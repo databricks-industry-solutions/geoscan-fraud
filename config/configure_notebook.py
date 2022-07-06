@@ -34,6 +34,15 @@ mlflow.set_experiment('/Users/{}/geoscan_experiment'.format(username))
 
 # COMMAND ----------
 
+# Where we might stored temporary data on local disk
+from pathlib import Path
+temp_directory = f"/tmp/{username}/geoscan"
+Path(temp_directory).mkdir(parents=True, exist_ok=True)
+
+# COMMAND ----------
+
 def teardown():
   _ = sql("DROP DATABASE IF EXISTS {} CASCADE".format(config['database']['name']))
   dbutils.fs.rm(config['database']['path'], True)
+  import shutil
+  shutil.rmtree(temp_directory)

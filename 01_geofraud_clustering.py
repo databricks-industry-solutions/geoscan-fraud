@@ -69,14 +69,7 @@ display(points_df)
 
 # COMMAND ----------
 
-import h3
-from pyspark.sql.functions import udf
-from pyspark.sql import functions as F
-
-@udf("string")
-def to_h3(lat, lng, precision):
-  h = h3.geo_to_h3(lat, lng, precision)
-  return h.upper()
+from utils.spark_utils import *
 
 display(
   points_df
@@ -148,12 +141,12 @@ with mlflow.start_run(run_name='GEOSCAN') as run:
 # COMMAND ----------
 
 geoJson = model.toGeoJson()
-with open("/tmp/{}_geoscan.geojson".format(run_id), 'w') as f:
+with open("{}/{}_geoscan.geojson".format(temp_directory, run_id), 'w') as f:
   f.write(geoJson)
 
 import mlflow
 client = mlflow.tracking.MlflowClient()
-client.log_artifact(run_id, "/tmp/{}_geoscan.geojson".format(run_id))
+client.log_artifact(run_id, "{}/{}_geoscan.geojson".format(temp_directory, run_id))
 
 # COMMAND ----------
 
@@ -258,13 +251,13 @@ nyc_anomalies
 
 # COMMAND ----------
 
-dbutils.fs.rm("/tmp/{}_geoscan".format(run_id), True)
-model.save("/tmp/{}_geoscan".format(run_id))
+dbutils.fs.rm("{}/{}_geoscan".format(temp_directory, run_id), True)
+model.save("{}/{}_geoscan".format(temp_directory, run_id))
 
 # COMMAND ----------
 
 from geoscan import GeoscanModel
-model = GeoscanModel.load("/tmp/{}_geoscan".format(run_id))
+model = GeoscanModel.load("{}/{}_geoscan".format(temp_directory, run_id))
 
 # COMMAND ----------
 

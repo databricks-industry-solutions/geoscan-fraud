@@ -37,13 +37,7 @@ display(model_personalized)
 
 # COMMAND ----------
 
-import h3
-from pyspark.sql.functions import udf
-
-@udf("string")
-def to_h3(lat, lng, precision):
-  h = h3.geo_to_h3(lat, lng, precision)
-  return h.upper()
+from utils.spark_utils import *
 
 # COMMAND ----------
 
@@ -98,7 +92,7 @@ clusters = model_personalized.filter(F.col('user') == user).toPandas().cluster.i
 personalized = folium.Map([40.75466940037548,-73.98365020751953], zoom_start=12, width='80%', height='100%')
 folium.TileLayer('Stamen Toner').add_to(personalized)
 
-for i, point in anomalies.iterrows():
+for i, point in list(anomalies.iterrows())[0:5]:
   folium.Marker([point.latitude, point.longitude], popup=point.amount).add_to(personalized)
 
 folium.GeoJson(clusters, name="geojson").add_to(personalized)
@@ -137,15 +131,9 @@ personalized
 
 # COMMAND ----------
 
-import pybloomfilter
-
-def train_bloom(records):
-  cluster = pybloomfilter.BloomFilter(len(records), 0.01)
-  cluster.update(records)
-  return cluster
-  
+from utils.bloom_utils import *
 records = list(tiles.filter(F.col('user') == user).toPandas().h3)
-cluster = train_bloom(records)
+cluster = train_bloom_filter(records)
 
 # COMMAND ----------
 
@@ -171,6 +159,7 @@ abnormal_df = (
     .withColumn('h3', to_h3(F.col('latitude'), F.col('longitude'), F.lit(10)))
     .select('h3').toPandas()
 )
+
 abnormal_df['matched'] = abnormal_df['h3'].apply(lambda x: x in cluster)
 display(abnormal_df)
 
@@ -185,8 +174,8 @@ user_df = tiles.groupBy('user').agg(F.collect_list('h3').alias('tiles')).toPanda
 user_clusters = {}
 
 for i, rec in user_df.iterrows():
-  bloom = train_bloom(list(rec.tiles))
-  user_clusters[rec.user] = bloom
+  bf = train_bloom_filter(list(rec.tiles))
+  user_clusters[rec.user] = bf
 
 # COMMAND ----------
 
@@ -213,48 +202,13 @@ _ = (
     .groupBy('user')
     .agg(F.collect_list('h3').alias('tiles'))
     .toPandas()
-    .to_csv('/tmp/geoscan_tiles')
+    .to_csv('{}/geoscan_tiles'.format(temp_directory))
 )
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC Our logic expects a dataframe of `user`, `latitude` or `longitude` as an input, appending our records with `0` or `1` (whether we have observed this location before or not). 
-
-# COMMAND ----------
-
-import mlflow
-
-class H3Lookup(mlflow.pyfunc.PythonModel):
-    
-  def load_context(self, context): 
-    import pandas as pd
-    import pybloomfilter    
-    blooms = {}
-    tiles = pd.read_csv(context.artifacts['tiles'])
-    for i, rec in user_df.iterrows():
-      records = list(rec.tiles)
-      bloom = pybloomfilter.BloomFilter(len(records), 0.1)
-      bloom.update(records)
-      blooms[rec.user] = bloom
-    self.blooms = blooms
-  
-  def predict(self, context, df):
-  
-    import h3
-    def to_h3(x):
-      h = h3.geo_to_h3(x[0], x[1], 10)
-      return h.upper()
-    
-    def is_anomalous(x):
-      if x[1] in self.blooms[x[0]]:
-        return 0
-      else:
-        return 1
-    
-    df['h3'] = df[['latitude', 'longitude']].apply(to_h3, axis=1)
-    df['anomaly'] = df[['user', 'h3']].apply(is_anomalous, axis=1)
-    return df.drop(['h3'], axis=1)
 
 # COMMAND ----------
 
@@ -266,16 +220,16 @@ class H3Lookup(mlflow.pyfunc.PythonModel):
 with mlflow.start_run(run_name='h3_lookup'):
 
   conda_env = mlflow.pyfunc.get_default_conda_env()
-  conda_env['dependencies'][2]['pip'] += ['pybloomfiltermmap3=={}'.format('.'.join([str(i) for i in list(pybloomfilter.VERSION)]))]
+  conda_env['dependencies'][2]['pip'] += ['pybloomfiltermmap3=={}'.format(bloom_version())]
   conda_env['dependencies'][2]['pip'] += ['h3=={}'.format(h3.__version__)]
   
   artifacts = {
-    'tiles': '/tmp/geoscan_tiles',
+    'tiles': '{}/geoscan_tiles'.format(temp_directory),
   }
   
   mlflow.pyfunc.log_model(
     'pipeline', 
-    python_model=H3Lookup(), 
+    python_model=H3Lookup(user_df), 
     conda_env=conda_env,
     artifacts=artifacts
     )
