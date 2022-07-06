@@ -229,7 +229,7 @@ with mlflow.start_run(run_name='h3_lookup'):
   
   mlflow.pyfunc.log_model(
     'pipeline', 
-    python_model=H3Lookup(user_df), 
+    python_model=H3Lookup(), 
     conda_env=conda_env,
     artifacts=artifacts
     )

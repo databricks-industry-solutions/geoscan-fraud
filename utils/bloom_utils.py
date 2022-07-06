@@ -12,15 +12,12 @@ def train_bloom_filter(records):
   
 class H3Lookup(mlflow.pyfunc.PythonModel):
   
-    def __init__(self, user_df):
-        self.user_df = user_df
-    
     def load_context(self, context): 
         import pandas as pd
         import pybloomfilter    
         blooms = {}
         tiles = pd.read_csv(context.artifacts['tiles'])
-        for i, rec in self.user_df.iterrows():
+        for i, rec in tiles.iterrows():
             records = list(rec.tiles)
             bloom = pybloomfilter.BloomFilter(len(records), 0.1)
             bloom.update(records)
