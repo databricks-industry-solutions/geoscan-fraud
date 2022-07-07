@@ -30,7 +30,7 @@ _ = sql("USE {}".format(config['database']['name']))
 
 import mlflow
 username = dbutils.notebook.entry_point.getDbutils().notebook().getContext().userName().get()
-mlflow.set_experiment('/Users/{}/geoscan_experiment'.format(username))
+mlflow.set_experiment('/Users/{}/geoscan'.format(username))
 
 # COMMAND ----------
 
