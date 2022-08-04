@@ -130,13 +130,12 @@ with mlflow.start_run(run_name='GEOSCAN') as run:
   mlflow.log_param('minPts', 20)
   
   model = geoscan.fit(points_df)
-  mlflow.spark.log_model(model, 'model')
   run_id = run.info.run_id
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC As strong advocate of open standard, we build GEOSCAN to support GeoJSON [rfc7946](https://tools.ietf.org/html/rfc7946) as model output. For convenience, we can attach GeoJson file as an artifact alongside the model on mlflow (file will be visualized as-is on mlflow tracking server).
+# MAGIC As strong advocate of open standard, we build GEOSCAN to support GeoJSON [rfc7946](https://tools.ietf.org/html/rfc7946) as model output. For convenience, we can attach GeoJson file as an artifact alongside the model on mlflow (`geojson` file format can be visualized as-is on mlflow tracking server).
 
 # COMMAND ----------
 
@@ -243,21 +242,6 @@ nyc_anomalies
 
 # MAGIC %md
 # MAGIC Given that clusters are density based, it is expected to find un-clustered points located near the edges of our clusters, probably still `epsilon` meters away from their neighbours but having less than `minPts` neighbours. In order to accomodate fraud detection use cases, we may want to expand our clusters slightly to incorporate transactions at a close vicinity.
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC Supporting the Spark ML API, our model can be serialized / deserialized as-is, outputing data as a GeoJson file as previously discussed.
-
-# COMMAND ----------
-
-dbutils.fs.rm("{}/{}_geoscan".format(temp_directory, run_id), True)
-model.save("{}/{}_geoscan".format(temp_directory, run_id))
-
-# COMMAND ----------
-
-from geoscan import GeoscanModel
-model = GeoscanModel.load("{}/{}_geoscan".format(temp_directory, run_id))
 
 # COMMAND ----------
 
@@ -437,7 +421,7 @@ personalized_areas.write.format('delta').mode('overwrite').saveAsTable(config['d
 
 # COMMAND ----------
 
-sql("OPTIMIZE {} ZORDER BY (user, h3)".format(config['database']['tables']['tiles']))
+_ = sql("OPTIMIZE {} ZORDER BY (user, h3)".format(config['database']['tables']['tiles']))
 
 # COMMAND ----------
 
