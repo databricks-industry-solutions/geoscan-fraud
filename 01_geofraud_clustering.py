@@ -35,11 +35,9 @@
 
 # MAGIC %md
 # MAGIC ### Dependencies
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC In addition to GEOSCAN jar file that must be installed on classpath, we also need to install its python wrapper. Installed in the future via a pypi repo, one needs to install local files from git whilst our code is not yet published.
+# MAGIC In addition to GEOSCAN maven [dependency](https://search.maven.org/artifact/com.databricks.labs/geoscan/0.2.8/jar) that must be installed on your cluster's classpath (see screenshot below), we also need to install its python wrapper from [pypi repo](https://pypi.org/project/geoscan/). The latter is part of the requirements.txt file and enforced below through the magic `%run` command. Please ensure both maven and python geoscan versions are aligned
+# MAGIC 
+# MAGIC <img src='https://raw.githubusercontent.com/databricks-industry-solutions/geoscan-fraud/main/images/geoscan_dependency.png' width=500>
 
 # COMMAND ----------
 
