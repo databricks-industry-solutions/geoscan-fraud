@@ -1,9 +1,0 @@
-database:
-  name: solacc_geoscan
-  path: '/FileStore/solution_accelerators/geoscan/database'
-  tables:
-    tiles: tiles
-
-model:
-  name: solacc_geoscan
-  path: '/FileStore/solution_accelerators/geoscan/model'
