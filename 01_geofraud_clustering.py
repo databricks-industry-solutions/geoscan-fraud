@@ -19,7 +19,7 @@
 # MAGIC 
 # MAGIC The first step of GEOSCAN is to link each point to all its neighbours within an `epsilon` distance and remove points having less than `minPts` neighbours. Concretely, this means running a cartesian product - `O(n^2)` time complexity - of our dataset to filter out tuples that are more than `epsilon` meters away from one another. In our approach, we leverage H3 hexagons to only group points we know are close enough to be worth comparing. As reported in below picture, we first map a point to an H3 polygon and draw a circle of radius `epsilon` that we tile to at least 1 complete ring. Therefore, 2 points being at a distance of `epsilon` away would be sharing at least 1 polygon in common, so grouping by polygon would group points in close vicinity, ignoring 99.99% of the dataset. These pairs can then be further measured using a [haversine](https://en.wikipedia.org/wiki/Haversine_formula) distance.
 # MAGIC 
-# MAGIC <img src="https://github.com/databricks-industry-solutions/geoscan-fraud/raw/main/images/geoscan_algorithm.png" width=800>
+# MAGIC <img src="https://brysmiwasb.blob.core.windows.net/demos/geoscan/geoscan_algorithm.png" width=800>
 # MAGIC 
 # MAGIC Even though the theoretical time complexity remains the same - `O(n^2)` - we did not have to run an expensive (and non realistic) cartesian product of our entire dataframe. The real time complexity is `O(p.k^2)` where `p` groups are processed in parallel, running cartesian product of `k` points (`k << n`) sharing a same H3 hexagon, hence scaling massively. This isn't magic though, and prone to failure when data is heavily skewed in dense area (we recommend sampling data in specific areas as reported later). 
 # MAGIC  
@@ -43,7 +43,7 @@
 
 # COMMAND ----------
 
-# MAGIC %run ./config/configure_notebook
+# MAGIC %run ./config/geoscan_config
 
 # COMMAND ----------
 
@@ -53,13 +53,50 @@
 
 # COMMAND ----------
 
-import pandas as pd
+import requests
+url = 'https://raw.githubusercontent.com/databrickslabs/geoscan/master/python/data/nyc.csv'
+req = requests.get(url)
+with open(f'/dbfs/{home_directory}/nyc.csv', 'wb') as file:
+  file.write(req.content)
+req.close()
+
+# COMMAND ----------
+
 from pyspark.sql import functions as F
-transactions = pd.read_csv('data/transactions.csv')
-transactions['latitude'] = transactions['latitude'].apply(lambda x: float(x))
-transactions['longitude'] = transactions['longitude'].apply(lambda x: float(x))
-transactions['amount'] = transactions['amount'].apply(lambda x: float(x))
-points_df = spark.createDataFrame(transactions)
+from pyspark.sql.types import * 
+
+schema = StructType([
+    StructField('latitude', DoubleType()),
+    StructField('longitude', DoubleType()),
+    StructField('amount', DoubleType()),
+    StructField('user', StringType())
+  ])
+
+_ = (
+  spark
+    .read
+    .format('csv')
+    .option('header', 'true')
+    .schema(schema)
+    .load(f'{home_directory}/nyc.csv')
+    .write
+    .format('delta')
+    .mode('overwrite')
+    .saveAsTable(config['db_raw_data'])
+)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Our simplistic dataset only contains a tokenized value for users, a geospatial coordinate (as `latitude` and `longitude`) and a transaction `amount`. In real life, the same should also contains transaction description, timestamp, and often has been enriched with merchant and brand information (will be part of a future solution accelerator). With our data stored on a Delta table, we can optimize read access to specific fields like `user` as well as rebalancing possible small files into well defined partitions
+
+# COMMAND ----------
+
+_ = sql("OPTIMIZE {} ZORDER BY user".format(config['db_raw_data']))
+
+# COMMAND ----------
+
+points_df = spark.read.table(config['db_raw_data'])
 display(points_df)
 
 # COMMAND ----------
@@ -69,7 +106,14 @@ display(points_df)
 
 # COMMAND ----------
 
-from utils.spark_utils import *
+import h3
+from pyspark.sql.functions import udf
+from pyspark.sql import functions as F
+
+@udf("string")
+def to_h3(lat, lng, precision):
+  h = h3.geo_to_h3(lat, lng, precision)
+  return h.upper()
 
 display(
   points_df
@@ -141,12 +185,12 @@ with mlflow.start_run(run_name='GEOSCAN') as run:
 # COMMAND ----------
 
 geoJson = model.toGeoJson()
-with open("{}/{}_geoscan.geojson".format(temp_directory, run_id), 'w') as f:
+with open(f'{temp_directory}/geoscan.geojson', 'w') as f:
   f.write(geoJson)
 
 import mlflow
 client = mlflow.tracking.MlflowClient()
-client.log_artifact(run_id, "{}/{}_geoscan.geojson".format(temp_directory, run_id))
+client.log_artifact(run_id, f"{temp_directory}/geoscan.geojson")
 
 # COMMAND ----------
 
@@ -251,13 +295,13 @@ nyc_anomalies
 
 # COMMAND ----------
 
-dbutils.fs.rm("{}/{}_geoscan".format(temp_directory, run_id), True)
-model.save("{}/{}_geoscan".format(temp_directory, run_id))
+dbutils.fs.rm(f'{home_directory}/geoscan', True)
+model.save(f'{home_directory}/geoscan')
 
 # COMMAND ----------
 
 from geoscan import GeoscanModel
-model = GeoscanModel.load("{}/{}_geoscan".format(temp_directory, run_id))
+model = GeoscanModel.load(f'{home_directory}/geoscan')
 
 # COMMAND ----------
 
@@ -293,17 +337,13 @@ with mlflow.start_run(run_name='GEOSCAN_PERSONALIZED') as run:
 
 # COMMAND ----------
 
-model_path = config['model']['path']
-
-# COMMAND ----------
-
-dbutils.fs.rm(model_path, True)
-models.save(model_path)
+dbutils.fs.rm(f'{home_directory}/geoscan_personalized', True)
+models.save(f'{home_directory}/geoscan_personalized')
 
 # COMMAND ----------
 
 from geoscan import GeoscanPersonalizedModel
-model_personalized = GeoscanPersonalizedModel.load(model_path)
+model_personalized = GeoscanPersonalizedModel.load(f'{home_directory}/geoscan_personalized')
 
 # COMMAND ----------
 
@@ -330,7 +370,7 @@ personalized_data = points_df.filter(F.col('user') == user).toPandas()[['latitud
 
 nyc_personalized = folium.Map([40.75466940037548,-73.98365020751953], zoom_start=12, width='80%', height='100%')
 folium.TileLayer('Stamen Toner').add_to(nyc_personalized)
-nyc_personalized.add_child(plugins.HeatMap(personalized_data.to_numpy(), radius=8))
+nyc_personalized.add_child(plugins.HeatMap(personalized_data.to_numpy(), radius=16))
 folium.GeoJson(personalized_geojson, name="geojson").add_to(nyc_personalized)
 nyc_personalized
 
@@ -428,7 +468,7 @@ display(personalized_areas)
 
 # COMMAND ----------
 
-personalized_areas.write.format('delta').mode('overwrite').saveAsTable(config['database']['tables']['tiles'])
+personalized_areas.write.format('delta').mode('overwrite').saveAsTable(config['db_personalized_tiles'])
 
 # COMMAND ----------
 
@@ -437,7 +477,7 @@ personalized_areas.write.format('delta').mode('overwrite').saveAsTable(config['d
 
 # COMMAND ----------
 
-sql("OPTIMIZE {} ZORDER BY (user, h3)".format(config['database']['tables']['tiles']))
+sql("OPTIMIZE {} ZORDER BY (user, h3)".format(config['db_personalized_tiles']))
 
 # COMMAND ----------
 
@@ -446,7 +486,7 @@ sql("OPTIMIZE {} ZORDER BY (user, h3)".format(config['database']['tables']['tile
 
 # COMMAND ----------
 
-personalized_tiles = spark.read.table(config['database']['tables']['tiles']).filter(F.col('user') == user)
+personalized_tiles = spark.read.table(config['db_personalized_tiles']).filter(F.col('user') == user)
 display(personalized_tiles)
 
 # COMMAND ----------
@@ -475,7 +515,7 @@ nyc_personalized
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC We suddenly have gained incredible insights about our customer's shopping behaviour. Although the core of their transactions are made in the chelsea and the financial district area, what seems to better define this user are his / her transactions around the Plaza Hotel and Williamsburg. 
+# MAGIC We suddely have gained incredible insights about our customer's shopping behaviour. Although the core of their transactions are made in the chelsea and the financial district area, what seems to better define this user are his / her transactions around the Plaza Hotel and Williamsburg. @Junta??
 
 # COMMAND ----------
 
