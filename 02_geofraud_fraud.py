@@ -1,4 +1,9 @@
 # Databricks notebook source
+# MAGIC %md 
+# MAGIC You may find this series of notebooks at https://github.com/databricks-industry-solutions/geoscan-fraud on the `web-sync` branch. For more information about this solution accelerator, visit https://www.databricks.com/solutions/accelerators/identifying-fraud.
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC # Fraud prevention
 # MAGIC In the previous [notebook]($./00_geofraud_context), we demonstrated how GEOSCAN can help financial services institutions leverage their entire dataset to better understand customers specific behaviours. In this notebook, we want to use the insights we have gained earlier to extract anomalous events and bridge the technological gap that exists between analytics and operations environments. More often than not, Fraud detection frameworks run outside of an analytics environment due to the combination of data sensitivity (PII), regulatory requirements (PCI/DSS) and model materiality (high SLAs and low latency). For these reasons, we explore here multiple strategies to serve our insights either as a self contained framework or through an online datastore (such as [redis](https://redis.io/), [mongodb](https://www.mongodb.com/) or [elasticache](https://aws.amazon.com/elasticache/) - although many other solutions may be viable)

@@ -1,4 +1,9 @@
 # Databricks notebook source
+# MAGIC %md 
+# MAGIC You may find this series of notebooks at https://github.com/databricks-industry-solutions/geoscan-fraud on the `web-sync` branch. For more information about this solution accelerator, visit https://www.databricks.com/solutions/accelerators/identifying-fraud.
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC # Density based spatial clustering
 # MAGIC [DBSCAN](https://www.aaai.org/Papers/KDD/1996/KDD96-037.pdf) (density-based spatial clustering of applications with noise) 
