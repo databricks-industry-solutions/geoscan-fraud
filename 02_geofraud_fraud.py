@@ -11,7 +11,7 @@
 
 # MAGIC %md
 # MAGIC ## Transactional context
-# MAGIC As we've trained personalized models for each customer, we can easily understand the type of transactions as well as the day and hours these transactions usually take place. Are these clusters more "active" during working hours or on week ends? Are these transactions more about fast foods and coffee shops or are they driving fewer but more expensives items? Such a geospatial analytics framework combined with transaction enrichment (future solution accelerator) could tell us great information about our customers' spends beyond demographics, moving towards a customer centric approach to retail banking. Unfortunately, our synthetic dataset does not contain any additional attributes to learn behavioral pattern from. For the purpose of this exercise, we will retrieve our clusters (as tiled with H3 polygon as introduced earlier) as-is to detect transactions that happened outside of any known location. 
+# MAGIC As we've trained personalized models for each customer, we can easily understand the type of transactions as well as the day and hours these transactions usually take place. Are these clusters more "active" during working hours or on week ends? Are these transactions more about fast foods and coffee shops or are they driving fewer but more expensive items? Such a geospatial analytics framework combined with transaction enrichment (future solution accelerator) could tell us great information about our customers' spends beyond demographics, moving towards a customer centric approach to retail banking. Unfortunately, our synthetic dataset does not contain any additional attributes to learn behavioral pattern from. For the purpose of this exercise, we will retrieve our clusters (as tiled with H3 polygon as introduced earlier) as-is to detect transactions that happened outside of any known location. 
 
 # COMMAND ----------
 
@@ -33,7 +33,7 @@ display(model_personalized)
 
 # MAGIC %md
 # MAGIC ## Extracting anomalies
-# MAGIC Our (simplisitic) approach will be to detect if a transaction was executed in a popular area for each of our customers. Since we have stored and indexed all of our models as H3 tiles, it becomes easy to enrich each transaction with their cluster using a simple JOIN operation (for large scale processing) or lookup (for real time scoring) instead of complex geospatial queries like point in polygon search. Although we are using the H3 python API instead of GEOSCAN library, our generated H3 hexadecimal values are consistent - assuming we select the same resolution we used to generate those tiles (10). For reference, please have a look at the H3 [resolution table](https://h3geo.org/docs/core-library/restable)
+# MAGIC Our (simplistic) approach will be to detect if a transaction was executed in a popular area for each of our customers. Since we have stored and indexed all of our models as H3 tiles, it becomes easy to enrich each transaction with their cluster using a simple JOIN operation (for large scale processing) or lookup (for real time scoring) instead of complex geospatial queries like point in polygon search. Although we are using the H3 python API instead of GEOSCAN library, our generated H3 hexadecimal values are consistent - assuming we select the same resolution we used to generate those tiles (10). For reference, please have a look at the H3 [resolution table](https://h3geo.org/docs/core-library/restable)
 
 # COMMAND ----------
 
@@ -42,7 +42,7 @@ from utils.spark_utils import *
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC In the example below, we can easily extract  transactions happenning outside of any customer prefered locations. Please note that we previously relaxed our conditions by adding 3 extra layers of H3 polygons to capture transactions happenning in close vicinity of spending clusters
+# MAGIC In the example below, we can easily extract  transactions happening outside of any customer preferred locations. Please note that we previously relaxed our conditions by adding 3 extra layers of H3 polygons to capture transactions happening in close vicinity of spending clusters
 
 # COMMAND ----------
 
@@ -77,7 +77,7 @@ display(anomalous_transactions)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Before moving forwards, it is always benefitial to validate our strategy (altough not empirically) using a simple visualization for a given customer (`99407ef8-40ae-424e-b9ae-9fd2e4838ec3`), reporting card transactions happenning outside of any known patterns.
+# MAGIC Before moving forwards, it is always beneficial to validate our strategy (although not empirically) using a simple visualization for a given customer (`99407ef8-40ae-424e-b9ae-9fd2e4838ec3`), reporting card transactions happening outside of any known patterns.
 
 # COMMAND ----------
 
@@ -180,7 +180,7 @@ for i, rec in user_df.iterrows():
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC We now have an efficient datastructure that can be used for real time lookup without having to maintain millions of H3 tiles in memory. For a given a transaction, we convert `latitude` and `longitude` to a H3 polygon (of size 10) and query the bloom filter for that specific user. Does that card transaction happenned in a familiar place?
+# MAGIC We now have an efficient datastructure that can be used for real time lookup without having to maintain millions of H3 tiles in memory. For a given a transaction, we convert `latitude` and `longitude` to a H3 polygon (of size 10) and query the bloom filter for that specific user. Does that card transaction happened in a familiar place?
 
 # COMMAND ----------
 
@@ -266,7 +266,7 @@ display(anomalies)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC However, this approach pauses an important operating challenge for large financial services organizations as new models would need to be constantly retrained and redeployed to adapt to users changing behaviours. Let's take an example a user going on holidays. Although their first card transactions may be returned as anomalous (not necessarily suspicious), such a strategy would need to adapt and learn the new "normal" as more and more transactions are observed. One would need to run the same process with new data, resulting in a new version of a model being released, reviewed by an independant team of experts, approved by a governance entity and eventually updated to a fraud production endpoints outside of any change freeze. Technically possible when supported by a strong operating model (data driven organizations), this approach may not be viable for many.
+# MAGIC However, this approach pauses an important operating challenge for large financial services organizations as new models would need to be constantly retrained and redeployed to adapt to users changing behaviours. Let's take an example a user going on holidays. Although their first card transactions may be returned as anomalous (not necessarily suspicious), such a strategy would need to adapt and learn the new "normal" as more and more transactions are observed. One would need to run the same process with new data, resulting in a new version of a model being released, reviewed by an independent team of experts, approved by a governance entity and eventually updated to a fraud production endpoints outside of any change freeze. Technically possible when supported by a strong operating model (data driven organizations), this approach may not be viable for many.
 
 # COMMAND ----------
 
