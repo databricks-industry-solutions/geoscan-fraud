@@ -29,7 +29,7 @@
 # MAGIC 
 # MAGIC **Step3: Convex Hulls**
 # MAGIC 
-# MAGIC As all our core points are defining our clusters, the final step is to find the [Convex Hull](https://en.wikipedia.org/wiki/Convex_hull), that is the smallest shape that include all of our core geo coordinates. There are plenty of litterature on that topic, and our approach can easily be used in memory for each cluster returned by our connected components. 
+# MAGIC As all our core points are defining our clusters, the final step is to find the [Convex Hull](https://en.wikipedia.org/wiki/Convex_hull), that is the smallest shape that include all of our core geo coordinates. There are plenty of literature on that topic, and our approach can easily be used in memory for each cluster returned by our connected components. 
 
 # COMMAND ----------
 
@@ -167,7 +167,7 @@ nyc
 
 # MAGIC %md
 # MAGIC ### Performance tuning
-# MAGIC Given the skews observed in our data distribution, it is expected to take more time for algoritm to group points to their nearest neighborood with large `epsilon` values. Although we clearly beat the `O(N^2)` curse of DBSCAN with well distributed data, training on skewed dataset tend to same time complexity (minus the technical limits imposed by memory) as `n` points would share same polygons `P x O(n^2) = O(n^2)`. Using simple UDF and native H3 library, one could reduce the complexity by sampling transactions to maximum of X points within a same radius (we will be using a sampling resolution of 11)
+# MAGIC Given the skews observed in our data distribution, it is expected to take more time for algorithm to group points to their nearest neighborhood with large `epsilon` values. Although we clearly beat the `O(N^2)` curse of DBSCAN with well distributed data, training on skewed dataset tend to same time complexity (minus the technical limits imposed by memory) as `n` points would share same polygons `P x O(n^2) = O(n^2)`. Using simple UDF and native H3 library, one could reduce the complexity by sampling transactions to maximum of X points within a same radius (we will be using a sampling resolution of 11)
 
 # COMMAND ----------
 
@@ -242,12 +242,12 @@ nyc_anomalies
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Given that clusters are density based, it is expected to find un-clustered points located near the edges of our clusters, probably still `epsilon` meters away from their neighbours but having less than `minPts` neighbours. In order to accomodate fraud detection use cases, we may want to expand our clusters slightly to incorporate transactions at a close vicinity.
+# MAGIC Given that clusters are density based, it is expected to find un-clustered points located near the edges of our clusters, probably still `epsilon` meters away from their neighbours but having less than `minPts` neighbours. In order to accommodate fraud detection use cases, we may want to expand our clusters slightly to incorporate transactions at a close vicinity.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Supporting the Spark ML API, our model can be serialized / deserialized as-is, outputing data as a GeoJson file as previously discussed.
+# MAGIC Supporting the Spark ML API, our model can be serialized / deserialized as-is, outputting data as a GeoJson file as previously discussed.
 
 # COMMAND ----------
 
@@ -289,7 +289,7 @@ with mlflow.start_run(run_name='GEOSCAN_PERSONALIZED') as run:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Training 200 models in parallel tooks only a couple of minutes on our entire dataset and on a small policy cluster. Note that our Spark model is no longer returning a unique model but a collection of GeoJson objects that can be accessed via a spark dataframe and stored on Delta table. Similar to our distributed approach, models can be stored and retrieved as per standard Spark API as follows. One caveat is that - instead of returning an in memory object - our model returns a dataframe that will be re-evaluated to subsequent actions. We therefore recomment persisting it / reloading first.
+# MAGIC Training 200 models in parallel takes only a couple of minutes on our entire dataset and on a small policy cluster. Note that our Spark model is no longer returning a unique model but a collection of GeoJson objects that can be accessed via a spark dataframe and stored on Delta table. Similar to our distributed approach, models can be stored and retrieved as per standard Spark API as follows. One caveat is that - instead of returning an in memory object - our model returns a dataframe that will be re-evaluated to subsequent actions. We therefore recomment persisting it / reloading first.
 
 # COMMAND ----------
 
